@@ -1,0 +1,15 @@
+default: &default
+  adapter: sqlite3
+  pool: 5
+  timeout: 5000
+  database: db/lebowski.sqlite3
+
+development:
+  <<: *default
+
+test:
+  <<: *default
+  database: ":memory:"
+
+production:
+  <<: *default

@@ -1,0 +1,33 @@
+#!/usr/bin/env ruby
+
+require "telegram/bot"
+require "rufus-scheduler"
+
+require "./lib/message_responder"
+require "./lib/app_configurator"
+require "./lib/atm_notifier"
+
+config = AppConfigurator.new
+config.configure
+
+token = config.token
+logger = config.logger
+
+logger.debug "Starting telegram bot"
+
+Telegram::Bot::Client.run(token) do |bot|
+  scheduler = Rufus::Scheduler.new
+  scheduler.every "1m" do
+    AppConfigurator.logger.debug "Updating refills..."
+    AtmNotifier.notify_about_refills(bot)
+  end
+
+  bot.listen do |message|
+    options = {bot: bot, message: message}
+
+    logger.debug "@#{message.from.username}: #{message.text}"
+    MessageResponder.new(options).respond
+  end
+
+  scheduler.join
+end
